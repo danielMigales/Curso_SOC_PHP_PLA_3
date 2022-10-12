@@ -1,21 +1,19 @@
 <?php
+
 //activar variables de sesión
 session_start();
 
 //inicialización de variables
-
-$_SESSION['personas'];
+//$_SESSION['personas'];
 $mensajes = null;
 $nif = null;
 $nombre = null;
 $direccion = null;
 
 //array para guardar las personas
-
 $arrayPersonas = [];
 
 //si existe la variable de sesión substituyo el contenido del array
-
 if (isset($_SESSION['personas'])) {
 	$arrayPersonas = $_SESSION['personas'];
 }
@@ -28,26 +26,30 @@ if (isset($_POST['alta'])) {
 
 		//validar datos obligatorios
 		//recuperar los datos sin espacios en blanco -trim()-
-		//recogida del dni, nombre y direccion
+
+		//recogida del nif. Si esta en blanco lanza excepcion y si es correcto el formato se aplica el else que comprueba si existe
 		if (!$nif = trim(filter_input(INPUT_POST, 'nif'))) {
 			throw new Exception('Nif obligatorio', 0);
 		}
-		else{
-			$existe= array_key_exists($nif, $arrayPersonas);
-			if($existe){
-				throw new Exception('Nif existe', 1);
+		//validar que el nif no exista en la base de datos
+		else {
+			$existe = array_key_exists($nif, $arrayPersonas);
+			if ($existe) {
+				throw new Exception('Persona ya existe', 1);
 			}
 		}
 
+		//recogida del nombre. Si esta en blanco lanza excepcion y si no pasa al else que guarda el nombre previamente formateado a minusculas en el array
 		if (!$nombre = trim(filter_input(INPUT_POST, 'nombre'))) {
-			throw new Exception('Nombre', 2);
+			throw new Exception('Nombre obligatorio', 2);
 		} else {
 			//guardamos el nombre y dirección en minúsculas con la primera letra en mayúsculas
 			$nombre = ucfirst(strtolower($nombre));
-			//guardar la persona en el array
-			$arrayPersonas[$nif]['nombre obligatorio'] = $nombre;
+			//guardar la persona en el array. ENTIENDO QUE LO QUE SE PIDE ES UN ARRAY MULTIDIMENSIONAL. NO QUEDA MUY CLARO
+			$arrayPersonas[$nif]['nombre'] = $nombre;
 		}
 
+		//recogida de direccion. Si esta vacio lanza excepcion y si no la guarda en el array en minusculas
 		if (!$direccion = trim(filter_input(INPUT_POST, 'direccion'))) {
 			throw new Exception('Direccion obligatoria', 3);
 		} else {
@@ -57,27 +59,14 @@ if (isset($_POST['alta'])) {
 			$arrayPersonas[$nif]['direccion'] = $direccion;
 		}
 
-		//mensaje de alta efectuada
+		//si los tres campos son correctos lanza mensaje de alta efectuada
 		if ($nif && $nombre && $direccion) {
 			$mensajes = 'Alta efectuada';
 		}
-
-		//echo ("<pre>" . print_r($arrayPersonas, true) . "</pre>");
 	} catch (Exception $e) {
-		$mensajes = $e->getCode() . '. ' . $e->getMessage() . '<br>';
+		$mensajes = $e->getCode() . '. ' . $e->getMessage();
 	}
 }
-
-
-
-
-
-//validar que el nif no exista en la base de datos
-
-
-
-
-
 
 
 //limpiar el formulario
@@ -121,9 +110,15 @@ if (isset($_POST['alta'])) {
 //confeccionar la tabla con las personas del array
 
 
+
+
+
 //volcar el contenido del array en la variable de sesión
 
 $_SESSION['personas'] = $arrayPersonas;
+
+
+//	
 
 ?>
 <html>
@@ -133,6 +128,7 @@ $_SESSION['personas'] = $arrayPersonas;
 	<meta charset='UTF-8'>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
 	<link rel="stylesheet" type="text/css" href="css/estilos.css">
+
 </head>
 
 <body>
@@ -164,7 +160,7 @@ $_SESSION['personas'] = $arrayPersonas;
 			<label for="nombre" class="col-sm-2 col-form-label"></label>
 			<button type="submit" class="btn btn-success" name=' alta'>Alta persona</button>
 			<!--Mostrar errores del formulario-->
-			<span><?= $mensajes ?></span>
+			<span style="color: red;float:right"><?= $mensajes ?></span>
 		</form><br>
 
 		<table class="table table-striped">
@@ -174,6 +170,14 @@ $_SESSION['personas'] = $arrayPersonas;
 				<th scope="col">Dirección</th>
 				<th scope="col"></th>
 			</tr>
+
+			<?php
+
+			foreach ($arrayPersonas as $numNif => $valores) {
+				print_r('<tr><td>' . $numNif . '</td><td>' . $arrayPersonas[$numNif]['nombre'] . '</td><td>' . $arrayPersonas[$numNif]['direccion'] . '</td><td></td></tr>');
+			}
+
+			?>
 
 			<!--tr>
 		      <td>40000000A</td>
@@ -186,7 +190,7 @@ $_SESSION['personas'] = $arrayPersonas;
 		      	</form>
 		      	<button type="button" class="btn btn-primary" name='modiPersona'>Modificar</button>
 		      </td>
-		    </tr-->
+		    </tr>-->
 		</table>
 
 		<form method='post' action='#' id='formularioBaja'>
