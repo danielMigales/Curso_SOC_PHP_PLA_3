@@ -4,7 +4,7 @@
 session_start();
 
 //inicialización de variables
-//$_SESSION['personas'];
+$_SESSION['personas'];
 $mensajes = null;
 $nif = null;
 $nombre = null;
@@ -16,17 +16,15 @@ $arrayPersonas = [];
 //si existe la variable de sesión substituyo el contenido del array
 if (isset($_SESSION['personas'])) {
 	$arrayPersonas = $_SESSION['personas'];
+} else {
+	$arrayPersonas = [];
 }
 
 //ALTA DE PERSONA
-
 if (isset($_POST['alta'])) {
-
 	try {
-
 		//validar datos obligatorios
 		//recuperar los datos sin espacios en blanco -trim()-
-
 		//recogida del nif. Si esta en blanco lanza excepcion y si es correcto el formato se aplica el else que comprueba si existe
 		if (!$nif = trim(filter_input(INPUT_POST, 'nif'))) {
 			throw new Exception('Nif obligatorio', 0);
@@ -35,60 +33,86 @@ if (isset($_POST['alta'])) {
 		else {
 			$existe = array_key_exists($nif, $arrayPersonas);
 			if ($existe) {
-				throw new Exception('Persona ya existe', 1);
+				throw new Exception('NIF ya existe', 1);
 			}
 		}
-
 		//recogida del nombre. Si esta en blanco lanza excepcion y si no pasa al else que guarda el nombre previamente formateado a minusculas en el array
 		if (!$nombre = trim(filter_input(INPUT_POST, 'nombre'))) {
 			throw new Exception('Nombre obligatorio', 2);
 		} else {
 			//guardamos el nombre y dirección en minúsculas con la primera letra en mayúsculas
 			$nombre = ucfirst(strtolower($nombre));
-			//guardar la persona en el array. ENTIENDO QUE LO QUE SE PIDE ES UN ARRAY MULTIDIMENSIONAL. NO QUEDA MUY CLARO
-			$arrayPersonas[$nif]['nombre'] = $nombre;
 		}
-
 		//recogida de direccion. Si esta vacio lanza excepcion y si no la guarda en el array en minusculas
 		if (!$direccion = trim(filter_input(INPUT_POST, 'direccion'))) {
 			throw new Exception('Direccion obligatoria', 3);
 		} else {
 			//guardamos el nombre y dirección en minúsculas con la primera letra en mayúsculas
 			$direccion = ucfirst(strtolower($direccion));
-			//guardar la persona en el array
-			$arrayPersonas[$nif]['direccion'] = $direccion;
 		}
-
 		//si los tres campos son correctos lanza mensaje de alta efectuada
 		if ($nif && $nombre && $direccion) {
 			$mensajes = 'Alta efectuada';
+			//guardar el nombre de la persona en el array.
+			$arrayPersonas[$nif]['nombre'] = $nombre;
+			//guardar la direccion de la persona en el array
+			$arrayPersonas[$nif]['direccion'] = $direccion;
+			//limpiar el formulario. Vuelvo a asignar a las variables que recogen los inputs en null
+			$nif = null;
+			$nombre = null;
+			$direccion = null;
 		}
 	} catch (Exception $e) {
 		$mensajes = $e->getCode() . '. ' . $e->getMessage();
 	}
 }
 
-
-//limpiar el formulario
-
-
 //BAJA DE TODAS LAS PERSONAS
-
-//inicializar el array
-
+//detectar cuando el usuario pulsa el boton baja
+if (isset($_POST['baja'])) {
+	//inicializar el array. En esta opcion se crea el array de nuevo sobreescribiendolo
+	$arrayPersonas = [];
+	// En esta opcion se elimina cada elemento, pero deja el mismo array intacto
+	foreach ($arrayPersonas as $i => $value) {
+		unset($arrayPersonas[$i]);
+	}
+}
 
 //BAJA DE LA PERSONA SELECCIONADA EN LA TABLA
-
-//recuperar el nif
-
-//validar nif informado
-
-//borrar la fila del array
-
-//mensaje de baja efectuada
-
+//detectar cuando el usuario ha pulsado el boton de baja individual
+if (isset($_POST['bajaPersona'])) {
+	try {
+		//recuperamos el nif y validamos que llegue informado
+		if (!$nifBaja = filter_input(INPUT_POST, 'nifBaja')) {
+			throw new Exception('Error al validar nif baja', 4);
+		}
+		//validar que el nif exista en la base de datos. Si no existe lanza una excepcion, si existe la borra del array
+		$existe = array_key_exists($nifBaja, $arrayPersonas);
+		if (!$existe) {
+			throw new Exception('Persona no existe', 5);
+		}
+		//borrar la fila del array 
+		else {
+			unset($arrayPersonas[$nifBaja]);
+			//mostrar mensaje de baja efectuada
+			$mensajes = 'Baja efectuada';
+		}
+	} catch (Exception $e) {
+		$mensajes = $e->getCode() . '. ' . $e->getMessage();
+	}
+}
 
 //MODIFICACION DE LA PERSONA SELECCIONADA
+
+if (isset($_POST['bajaPersona'])) {
+	try {
+
+		
+	} catch (Exception $e) {
+		$mensajes = $e->getCode() . '. ' . $e->getMessage();
+	}
+}
+
 
 //recuperar los datos sin espacios en blanco -trim()-
 
@@ -103,6 +127,10 @@ if (isset($_POST['alta'])) {
 //mensaje de modificación efectuada
 
 
+
+
+
+
 //CONSULTA DE PERSONAS
 
 //ordenar el array por nif
@@ -114,11 +142,7 @@ if (isset($_POST['alta'])) {
 
 
 //volcar el contenido del array en la variable de sesión
-
 $_SESSION['personas'] = $arrayPersonas;
-
-
-//	
 
 ?>
 <html>
@@ -128,7 +152,6 @@ $_SESSION['personas'] = $arrayPersonas;
 	<meta charset='UTF-8'>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
 	<link rel="stylesheet" type="text/css" href="css/estilos.css">
-
 </head>
 
 <body>
@@ -162,7 +185,6 @@ $_SESSION['personas'] = $arrayPersonas;
 			<!--Mostrar errores del formulario-->
 			<span style="color: red;float:right"><?= $mensajes ?></span>
 		</form><br>
-
 		<table class="table table-striped">
 			<tr class='table-dark'>
 				<th scope="col">NIF</th>
@@ -170,32 +192,35 @@ $_SESSION['personas'] = $arrayPersonas;
 				<th scope="col">Dirección</th>
 				<th scope="col"></th>
 			</tr>
-
+			<!--añadir las columnas con el contenido del array personas-->
 			<?php
-
+			//ordenar el array de menor a mayor
+			ksort($arrayPersonas);
+			//recorrer el array 
 			foreach ($arrayPersonas as $numNif => $valores) {
-				print_r('<tr><td>' . $numNif . '</td><td>' . $arrayPersonas[$numNif]['nombre'] . '</td><td>' . $arrayPersonas[$numNif]['direccion'] . '</td><td></td></tr>');
-			}
-
-			?>
-
-			<!--tr>
-		      <td>40000000A</td>
-		      <td><input type='text' value='O-Ren Ishii' class='nombre'></td>
-		      <td><input type='text' value='Graveyard avenue, 66' class='direccion'></td>
+				//variables con los valores. Son para simplificar la insercion en los strings de los inputs (demasiadas comillas)
+				$valor1 = $arrayPersonas[$numNif]['nombre'];
+				$valor2 = $arrayPersonas[$numNif]['direccion'];
+				//formando las columnas con los valores
+				echo "<tr>
+		      <td>$numNif</td>
+		      <td><input type='text' value='$valor1'class='nombre'></td>
+		      <td><input type='text' value='$valor2' class='direccion'></td>
 		      <td>
 		      	<form method='post' action='#'>
-		      		<input type='hidden' name='nifBaja' value='40000000A'>
-		      		<button type="submit" class="btn btn-warning" name='bajaPersona'>Baja</button>
+		      		<input type='hidden' name='nifBaja' value='$numNif'>
+		      		<button type='submit' class='btn btn-warning' name='bajaPersona'>Baja</button>
 		      	</form>
-		      	<button type="button" class="btn btn-primary" name='modiPersona'>Modificar</button>
+		      	<button type='button' class='btn btn-primary' name='modiPersona'>Modificar</button>
 		      </td>
-		    </tr>-->
+		    </tr>";
+			}
+			?>
 		</table>
-
 		<form method='post' action='#' id='formularioBaja'>
 			<input type='hidden' id='baja' name='baja'></input>
-			<button type="submit" class="btn btn-danger" name='baja'>Baja personas</button>
+			<!--añadir confirmacion con javascript-->
+			<button type="submit" class="btn btn-danger" onclick="confirmarBaja()" name='baja'>Baja personas</button>
 		</form>
 
 		<!--FORMULARIO OCULTO PARA LA MODIFICACION-->
