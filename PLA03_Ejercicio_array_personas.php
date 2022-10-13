@@ -89,7 +89,7 @@ if (isset($_POST['bajaPersona'])) {
 		//validar que el nif exista en la base de datos. Si no existe lanza una excepcion, si existe la borra del array
 		$existe = array_key_exists($nifBaja, $arrayPersonas);
 		if (!$existe) {
-			throw new Exception('Persona no existe', 5);
+			throw new Exception('Nif no existe', 5);
 		}
 		//borrar la fila del array 
 		else {
@@ -104,13 +104,10 @@ if (isset($_POST['bajaPersona'])) {
 
 //MODIFICACION DE LA PERSONA SELECCIONADA
 
-if (isset($_POST['bajaPersona'])) {
-	try {
-
-		
-	} catch (Exception $e) {
-		$mensajes = $e->getCode() . '. ' . $e->getMessage();
-	}
+if (isset($_POST['modiPersona'])) {
+	
+		$mensajes='Modificacion efectuada';
+	
 }
 
 
@@ -211,7 +208,7 @@ $_SESSION['personas'] = $arrayPersonas;
 		      		<input type='hidden' name='nifBaja' value='$numNif'>
 		      		<button type='submit' class='btn btn-warning' name='bajaPersona'>Baja</button>
 		      	</form>
-		      	<button type='button' class='btn btn-primary' name='modiPersona'>Modificar</button>
+		      	<button type='button' class='btn btn-primary modificar' name='modiPersona'>Modificar</button>
 		      </td>
 		    </tr>";
 			}
