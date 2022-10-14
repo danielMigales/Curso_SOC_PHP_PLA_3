@@ -4,7 +4,7 @@
 session_start();
 
 //inicialización de variables
-$_SESSION['personas'];
+//$_SESSION['personas'];
 $mensajes = null;
 $nif = null;
 $nombre = null;
@@ -17,8 +17,9 @@ $arrayPersonas = [];
 if (isset($_SESSION['personas'])) {
 	$arrayPersonas = $_SESSION['personas'];
 } else {
-	$arrayPersonas = [];
+	$_SESSION['personas'] = [];
 }
+
 
 //ALTA DE PERSONA
 if (isset($_POST['alta'])) {
@@ -57,14 +58,15 @@ if (isset($_POST['alta'])) {
 			$arrayPersonas[$nif]['nombre'] = $nombre;
 			//guardar la direccion de la persona en el array
 			$arrayPersonas[$nif]['direccion'] = $direccion;
-			//limpiar el formulario. Vuelvo a asignar a las variables que recogen los inputs en null
-			$nif = null;
-			$nombre = null;
-			$direccion = null;
 		}
 	} catch (Exception $e) {
 		$mensajes = $e->getCode() . '. ' . $e->getMessage();
 	}
+	//limpiar el formulario. Vuelvo a asignar a las variables que recogen los inputs y el mensaje en null
+	$nif = null;
+	$nombre = null;
+	$direccion = null;
+	$mensajes = null;
 }
 
 //BAJA DE TODAS LAS PERSONAS
@@ -103,29 +105,36 @@ if (isset($_POST['bajaPersona'])) {
 }
 
 //MODIFICACION DE LA PERSONA SELECCIONADA
+//se detecta el input oculto del formulario que se rellena conjavascript al pulsar modificar 
+try {
+	if (isset($_POST['modificar'])) {
+		//recuperar los datos sin espacios en blanco -trim()-//validar datos
+		$nifModi = trim(filter_input(INPUT_POST, 'nifModi'));
+		$nombreModi = trim(filter_input(INPUT_POST, 'nombreModi'));
+		$direccionModi = trim(filter_input(INPUT_POST, 'direccionModi'));
 
-if (isset($_POST['modiPersona'])) {
-	
-		$mensajes='Modificacion efectuada';
-	
+
+		//validar que el nif exista en la base de datos
+		$existe = array_key_exists($nifModi, $arrayPersonas);
+		if (!$existe) {
+			throw new Exception("La modificacion de datos para el nif $nifModi no es correcta ya que no existe", 6);
+		}
+
+		//guardamos el nombre y dirección en minúsculas con la primera letra en mayúsculas
+
+
+		//modificar la persona en el array
+
+		$arrayPersonas[$nifModi]['nombre'] = $nombreModi;
+		$arrayPersonas[$nifModi]['direccion'] = $direccionModi;
+
+
+		//mensaje de modificación efectuada
+		$mensajes = 'Modificacion efectuada';
+	}
+} catch (Exception $e) {
+	$mensajes = $e->getCode() . '. ' . $e->getMessage();
 }
-
-
-//recuperar los datos sin espacios en blanco -trim()-
-
-//validar datos
-
-//validar que el nif no exista en la base de datos
-
-//guardamos el nombre y dirección en minúsculas con la primera letra en mayúsculas
-
-//modificar la persona en el array
-
-//mensaje de modificación efectuada
-
-
-
-
 
 
 //CONSULTA DE PERSONAS
@@ -178,7 +187,7 @@ $_SESSION['personas'] = $arrayPersonas;
 				</div>
 			</div>
 			<label for="nombre" class="col-sm-2 col-form-label"></label>
-			<button type="submit" class="btn btn-success" name=' alta'>Alta persona</button>
+			<button type="submit" class="btn btn-success" name='alta'>Alta persona</button>
 			<!--Mostrar errores del formulario-->
 			<span style="color: red;float:right"><?= $mensajes ?></span>
 		</form><br>
@@ -200,7 +209,7 @@ $_SESSION['personas'] = $arrayPersonas;
 				$valor2 = $arrayPersonas[$numNif]['direccion'];
 				//formando las columnas con los valores
 				echo "<tr>
-		      <td>$numNif</td>
+		      <td class='nif'>$numNif</td>
 		      <td><input type='text' value='$valor1'class='nombre'></td>
 		      <td><input type='text' value='$valor2' class='direccion'></td>
 		      <td>
@@ -208,7 +217,7 @@ $_SESSION['personas'] = $arrayPersonas;
 		      		<input type='hidden' name='nifBaja' value='$numNif'>
 		      		<button type='submit' class='btn btn-warning' name='bajaPersona'>Baja</button>
 		      	</form>
-		      	<button type='button' class='btn btn-primary modificar' name='modiPersona'>Modificar</button>
+		      	<button type='button' class='btn btn-primary modificar'>Modificar</button>
 		      </td>
 		    </tr>";
 			}
