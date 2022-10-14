@@ -20,7 +20,6 @@ if (isset($_SESSION['personas'])) {
 	$_SESSION['personas'] = [];
 }
 
-
 //ALTA DE PERSONA
 if (isset($_POST['alta'])) {
 	try {
@@ -63,10 +62,7 @@ if (isset($_POST['alta'])) {
 		$mensajes = $e->getCode() . '. ' . $e->getMessage();
 	}
 	//limpiar el formulario. Vuelvo a asignar a las variables que recogen los inputs y el mensaje en null
-	$nif = null;
-	$nombre = null;
-	$direccion = null;
-	$mensajes = null;
+
 }
 
 //BAJA DE TODAS LAS PERSONAS
@@ -108,27 +104,32 @@ if (isset($_POST['bajaPersona'])) {
 //se detecta el input oculto del formulario que se rellena conjavascript al pulsar modificar 
 try {
 	if (isset($_POST['modificar'])) {
-		//recuperar los datos sin espacios en blanco -trim()-//validar datos
-		$nifModi = trim(filter_input(INPUT_POST, 'nifModi'));
-		$nombreModi = trim(filter_input(INPUT_POST, 'nombreModi'));
-		$direccionModi = trim(filter_input(INPUT_POST, 'direccionModi'));
-
-
-		//validar que el nif exista en la base de datos
+		//recuperar nif sin espacios en blanco -trim() y validar datos. Si esta en blanco lanza excepcion.
+		if (!$nifModi = trim(filter_input(INPUT_POST, 'nifModi'))) {
+			throw new Exception('El Nif no se ha informado', 6);
+		}
+		//validar que el nif exista en la base de datos. Si se ha modificado y no es correcto lanza excepcion
 		$existe = array_key_exists($nifModi, $arrayPersonas);
 		if (!$existe) {
-			throw new Exception("La modificacion de datos para el nif $nifModi no es correcta ya que no existe", 6);
+			throw new Exception("La modificacion de datos para el nif $nifModi no es correcta ya que no existe", 9);
 		}
-
-		//guardamos el nombre y dirección en minúsculas con la primera letra en mayúsculas
-
-
-		//modificar la persona en el array
-
+		//recuperar nombre sin espacios en blanco -trim() y validar datos. Si esta en blanco lanza excepcion.
+		if (!$nombreModi = trim(filter_input(INPUT_POST, 'nombreModi'))) {
+			throw new Exception('El nombre modificado no se ha informado', 7);
+		} else {
+			//guardamos el nuevo nombre en minúsculas con la primera letra en mayúsculas
+			$nombreModi = ucfirst(strtolower($nombreModi));
+		}
+		//recuperar direccion sin espacios en blanco -trim() y validar datos. Si esta en blanco lanza excepcion.
+		if (!$direccionModi = trim(filter_input(INPUT_POST, 'direccionModi'))) {
+			throw new Exception('La direccion modificada no se ha informado', 8);
+		} else {
+			//guardamos dirección en minúsculas con la primera letra en mayúsculas
+			$direccionModi = ucfirst(strtolower($direccionModi));
+		}
+		//sobreescribimos la persona en el array. Añadimos los nuevos datos al array en la misma fila del dni
 		$arrayPersonas[$nifModi]['nombre'] = $nombreModi;
 		$arrayPersonas[$nifModi]['direccion'] = $direccionModi;
-
-
 		//mensaje de modificación efectuada
 		$mensajes = 'Modificacion efectuada';
 	}
@@ -136,21 +137,37 @@ try {
 	$mensajes = $e->getCode() . '. ' . $e->getMessage();
 }
 
-
-//CONSULTA DE PERSONAS
-
-//ordenar el array por nif
-
-//confeccionar la tabla con las personas del array
-
-
-
-
+//la creacion de la tabla html la he puesto en una funcion que recorre el array y crea las columnas. Desde el HTML se realiza la llamada
+function crearTablaPersonas($arrayPersonas)
+{
+	//ordenar el array que tenemos de menor a mayor
+	ksort($arrayPersonas);
+	//recorrer el array 
+	foreach ($arrayPersonas as $numNif => $valores) {
+		//variables con los valores. Son para simplificar la insercion en los strings de los inputs (demasiadas comillas)
+		$valor1 = $arrayPersonas[$numNif]['nombre'];
+		$valor2 = $arrayPersonas[$numNif]['direccion'];
+		//añadir las columnas con el contenido del array personas
+		echo "<tr>
+  <td class='nif'>$numNif</td>
+  <td><input type='text' value='$valor1'class='nombre'></td>
+  <td><input type='text' value='$valor2' class='direccion'></td>
+  <td>
+	  <form method='post' action='#'>
+		  <input type='hidden' name='nifBaja' value='$numNif'>
+		  <button type='submit' class='btn btn-warning' name='bajaPersona'>Baja</button>
+	  </form>
+	  <button type='button' class='btn btn-primary modificar'>Modificar</button>
+  </td>
+</tr>";
+	}
+}
 
 //volcar el contenido del array en la variable de sesión
 $_SESSION['personas'] = $arrayPersonas;
 
 ?>
+
 <html>
 
 <head>
@@ -198,31 +215,14 @@ $_SESSION['personas'] = $arrayPersonas;
 				<th scope="col">Dirección</th>
 				<th scope="col"></th>
 			</tr>
-			<!--añadir las columnas con el contenido del array personas-->
+
 			<?php
-			//ordenar el array de menor a mayor
-			ksort($arrayPersonas);
-			//recorrer el array 
-			foreach ($arrayPersonas as $numNif => $valores) {
-				//variables con los valores. Son para simplificar la insercion en los strings de los inputs (demasiadas comillas)
-				$valor1 = $arrayPersonas[$numNif]['nombre'];
-				$valor2 = $arrayPersonas[$numNif]['direccion'];
-				//formando las columnas con los valores
-				echo "<tr>
-		      <td class='nif'>$numNif</td>
-		      <td><input type='text' value='$valor1'class='nombre'></td>
-		      <td><input type='text' value='$valor2' class='direccion'></td>
-		      <td>
-		      	<form method='post' action='#'>
-		      		<input type='hidden' name='nifBaja' value='$numNif'>
-		      		<button type='submit' class='btn btn-warning' name='bajaPersona'>Baja</button>
-		      	</form>
-		      	<button type='button' class='btn btn-primary modificar'>Modificar</button>
-		      </td>
-		    </tr>";
-			}
+			//llamada a la funcion crear tablas
+			crearTablaPersonas($arrayPersonas);
 			?>
+
 		</table>
+
 		<form method='post' action='#' id='formularioBaja'>
 			<input type='hidden' id='baja' name='baja'></input>
 			<!--añadir confirmacion con javascript-->
