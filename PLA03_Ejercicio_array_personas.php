@@ -4,7 +4,6 @@
 session_start();
 
 //inicialización de variables
-$_SESSION['personas'];
 $nif = null;
 $nombre = null;
 $direccion = null;
@@ -27,25 +26,25 @@ if (isset($_POST['alta'])) {
 	try {
 		//recogida del nif. Si esta en blanco lanza excepcion y si es correcto el formato se aplica el else que comprueba si existe
 		if (!$nif = trim(filter_input(INPUT_POST, 'nif'))) {
-			throw new Exception('El campo nif no debe estar vacio.', 0);
+			throw new Exception('El campo nif no debe estar vacio.', 1);
 		}
 		//validar que el nif no exista en la base de datos
 		else {
 			$existe = array_key_exists($nif, $arrayPersonas);
 			if ($existe) {
-				throw new Exception('El NIF proporcionado ya existe en la base de datos.', 1);
+				throw new Exception('El NIF proporcionado ya existe en la base de datos.', 2);
 			}
 		}
 		//recogida del nombre. Si esta en blanco lanza excepcion y si no pasa al else que guarda el nombre previamente formateado a minusculas en el array
 		if (!$nombre = trim(filter_input(INPUT_POST, 'nombre'))) {
-			throw new Exception('El campo nombre no debe estar vacio.', 2);
+			throw new Exception('El campo nombre no debe estar vacio.', 3);
 		} else {
 			//guardamos el nombre y dirección en minúsculas con la primera letra en mayúsculas
 			$nombre = ucfirst(strtolower($nombre));
 		}
 		//recogida de direccion. Si esta vacio lanza excepcion y si no la guarda en el array en minusculas
 		if (!$direccion = trim(filter_input(INPUT_POST, 'direccion'))) {
-			throw new Exception('El campo direccion no debe estar vacio.', 3);
+			throw new Exception('El campo direccion no debe estar vacio.', 4);
 		} else {
 			//guardamos el nombre y dirección en minúsculas con la primera letra en mayúsculas
 			$direccion = ucfirst(strtolower($direccion));
@@ -57,7 +56,7 @@ if (isset($_POST['alta'])) {
 			//guardar la direccion de la persona en el array
 			$arrayPersonas[$nif]['direccion'] = $direccion;
 			$mensajes = 'Alta efectuada correctamente.';
-			//limpiar el formulario. Vuelvo a asignar a las variables que recogen los inputs y el mensaje en null
+			//limpiar el formulario. Vuelvo a asignar a las variables que recogen los inputs
 			$nif = null;
 			$nombre = null;
 			$direccion = null;
@@ -83,15 +82,16 @@ if (isset($_POST['baja'])) {
 //detectar cuando el usuario ha pulsado el boton de baja individual
 if (isset($_POST['bajaPersona'])) {
 	try {
-		//recuperamos el nif y validamos que llegue informado
-		$nifBaja = $_POST['nifBaja'] ^ CLAVE;
+		//recuperamos el nif y validamos que llegue informado. ESTE CAMPO DE NIF NO ES EL QUE ESTA VISIBLE EN LA TABLA SINO EL QUE ESTA OCULTO
 		if (!$nifBaja = filter_input(INPUT_POST, 'nifBaja')) {
-			throw new Exception('Error al validar el nif.', 4);
+			throw new Exception('El campo nif no puede estar vacio.', 5);
 		}
-		//validar que el nif exista en la base de datos. Si no existe lanza una excepcion, si existe la borra del array
+		//Desciframos el nif
+		$nifBaja = $nifBaja ^ CLAVE;
+		//validar que el nif exista en la base de datos. Si no existe lanza una excepcion, si existe la borra del array. ESTE CAMPO DE NIF NO ES EL QUE ESTA VISIBLE EN LA TABLA SINO EL QUE ESTA OCULTO
 		$existe = array_key_exists($nifBaja, $arrayPersonas);
 		if (!$existe) {
-			throw new Exception('El Nif introducido no figura en la base de datos.', 5);
+			throw new Exception('El Nif introducido no figura en la base de datos.', 6);
 		}
 		//borrar la fila del array 
 		else {
@@ -109,27 +109,28 @@ if (isset($_POST['bajaPersona'])) {
 if (isset($_POST['modificar'])) {
 	global $mensajes;
 	global $arrayPersonas;
-
 	try {
 		//recuperar nif sin espacios en blanco -trim() y validar datos. Si esta en blanco lanza excepcion.
 		if (!$nifModi = trim(filter_input(INPUT_POST, 'nifModi'))) {
-			throw new Exception('El campo Nif no debe estar vacio.', 6);
+			throw new Exception('El campo Nif no debe estar vacio.', 7);
 		}
+		//Desciframos el nif
+		$nifModi = $nifModi ^ CLAVE;
 		//validar que el nif exista en la base de datos. Si se ha modificado y no es correcto lanza excepcion
 		$existe = array_key_exists($nifModi, $arrayPersonas);
 		if (!$existe) {
-			throw new Exception("La modificacion del nif no es correcta ya que no figura en la base de datos.", 9);
+			throw new Exception("La modificacion del nif no es correcta ya que no figura en la base de datos.", 8);
 		}
 		//recuperar nombre sin espacios en blanco -trim() y validar datos. Si esta en blanco lanza excepcion.
 		if (!$nombreModi = trim(filter_input(INPUT_POST, 'nombreModi'))) {
-			throw new Exception('El campo nombre no debe estar vacio', 7);
+			throw new Exception('El campo nombre no debe estar vacio', 9);
 		} else {
 			//guardamos el nuevo nombre en minúsculas con la primera letra en mayúsculas
 			$nombreModi = ucfirst(strtolower($nombreModi));
 		}
 		//recuperar direccion sin espacios en blanco -trim() y validar datos. Si esta en blanco lanza excepcion.
 		if (!$direccionModi = trim(filter_input(INPUT_POST, 'direccionModi'))) {
-			throw new Exception('El campo direccion no debe estar vacio', 8);
+			throw new Exception('El campo direccion no debe estar vacio', 10);
 		} else {
 			//guardamos dirección en minúsculas con la primera letra en mayúsculas
 			$direccionModi = ucfirst(strtolower($direccionModi));
@@ -144,30 +145,27 @@ if (isset($_POST['modificar'])) {
 	}
 }
 
-
 //la creacion de la tabla html la he puesto en una funcion que recorre el array y crea las columnas. Desde el HTML se realiza la llamada
 function crearTablaPersonas($arrayPersonas)
 {
 	//ordenar el array que tenemos de menor a mayor
 	ksort($arrayPersonas);
-
 	//recorrer el array 
 	foreach ($arrayPersonas as $numNif => $valores) {
 		//variables con los valores. Son para simplificar la insercion en los strings de los inputs (demasiadas comillas)
 		$valor1 = $arrayPersonas[$numNif]['nombre'];
 		$valor2 = $arrayPersonas[$numNif]['direccion'];
-
 		//cifrado del numero de nif en la baja
-		//$nifCifrado = $numNif ^ CLAVE;
-
+		$nifCifrado = (string)$numNif ^ CLAVE;
 		//añadir las columnas con el contenido del array personas
+		//se modifica la primera td y el input oculto para incluir el nif cifrado
 		echo "<tr>
-  <td class='nif'>$numNif</td>
+  <td class='nif' data-nif='$nifCifrado'>$numNif</td>
   <td><input type='text' value='$valor1'class='nombre'></td>
   <td><input type='text' value='$valor2' class='direccion'></td>
   <td>
 	  <form method='post' action='#'>
-		  <input type='hidden' name='nifBaja' value='$numNif'>
+		  <input type='hidden' name='nifBaja' value='$nifCifrado'>
 		  <button type='submit' class='btn btn-warning' name='bajaPersona'>Baja</button>
 	  </form>
 	  <button type='button' class='btn btn-primary modificar'>Modificar</button>

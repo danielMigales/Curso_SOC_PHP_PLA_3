@@ -19,8 +19,10 @@ function traslladarDades() {
 	var tr = this.closest('tr') //buscar l'etiqueta tr de la fila a la que pertany el botó on l'usuari a fet click
 
 	//recuperar los datos de la persona
-	var nif = tr.querySelector('.nif').innerText;
+	var nif = tr.querySelector('.nif').getAttribute('data-nif');
+	console.log(nif);
 	var nombre = tr.querySelector('.nombre').value;
+	console.log(nombre);
 	var direccion = tr.querySelector('.direccion').value;
 
 	//trasladar los datos al formulario oculto
