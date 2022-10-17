@@ -4,11 +4,12 @@
 session_start();
 
 //inicialización de variables
-//$_SESSION['personas'];
-$mensajes = null;
+$_SESSION['personas'];
 $nif = null;
 $nombre = null;
 $direccion = null;
+$mensajes = null;
+const CLAVE = 'zxspectrum';
 
 //array para guardar las personas
 $arrayPersonas = [];
@@ -22,47 +23,48 @@ if (isset($_SESSION['personas'])) {
 
 //ALTA DE PERSONA
 if (isset($_POST['alta'])) {
+	//validar datos obligatorios y recuperar los datos sin espacios en blanco -trim()-
 	try {
-		//validar datos obligatorios
-		//recuperar los datos sin espacios en blanco -trim()-
 		//recogida del nif. Si esta en blanco lanza excepcion y si es correcto el formato se aplica el else que comprueba si existe
 		if (!$nif = trim(filter_input(INPUT_POST, 'nif'))) {
-			throw new Exception('Nif obligatorio', 0);
+			throw new Exception('El campo nif no debe estar vacio.', 0);
 		}
 		//validar que el nif no exista en la base de datos
 		else {
 			$existe = array_key_exists($nif, $arrayPersonas);
 			if ($existe) {
-				throw new Exception('NIF ya existe', 1);
+				throw new Exception('El NIF proporcionado ya existe en la base de datos.', 1);
 			}
 		}
 		//recogida del nombre. Si esta en blanco lanza excepcion y si no pasa al else que guarda el nombre previamente formateado a minusculas en el array
 		if (!$nombre = trim(filter_input(INPUT_POST, 'nombre'))) {
-			throw new Exception('Nombre obligatorio', 2);
+			throw new Exception('El campo nombre no debe estar vacio.', 2);
 		} else {
 			//guardamos el nombre y dirección en minúsculas con la primera letra en mayúsculas
 			$nombre = ucfirst(strtolower($nombre));
 		}
 		//recogida de direccion. Si esta vacio lanza excepcion y si no la guarda en el array en minusculas
 		if (!$direccion = trim(filter_input(INPUT_POST, 'direccion'))) {
-			throw new Exception('Direccion obligatoria', 3);
+			throw new Exception('El campo direccion no debe estar vacio.', 3);
 		} else {
 			//guardamos el nombre y dirección en minúsculas con la primera letra en mayúsculas
 			$direccion = ucfirst(strtolower($direccion));
 		}
 		//si los tres campos son correctos lanza mensaje de alta efectuada
 		if ($nif && $nombre && $direccion) {
-			$mensajes = 'Alta efectuada';
 			//guardar el nombre de la persona en el array.
 			$arrayPersonas[$nif]['nombre'] = $nombre;
 			//guardar la direccion de la persona en el array
 			$arrayPersonas[$nif]['direccion'] = $direccion;
+			$mensajes = 'Alta efectuada correctamente.';
+			//limpiar el formulario. Vuelvo a asignar a las variables que recogen los inputs y el mensaje en null
+			$nif = null;
+			$nombre = null;
+			$direccion = null;
 		}
 	} catch (Exception $e) {
 		$mensajes = $e->getCode() . '. ' . $e->getMessage();
 	}
-	//limpiar el formulario. Vuelvo a asignar a las variables que recogen los inputs y el mensaje en null
-
 }
 
 //BAJA DE TODAS LAS PERSONAS
@@ -74,6 +76,7 @@ if (isset($_POST['baja'])) {
 	foreach ($arrayPersonas as $i => $value) {
 		unset($arrayPersonas[$i]);
 	}
+	$mensajes = 'Todas las personas han sido borradas de la base de datos.';
 }
 
 //BAJA DE LA PERSONA SELECCIONADA EN LA TABLA
@@ -81,19 +84,20 @@ if (isset($_POST['baja'])) {
 if (isset($_POST['bajaPersona'])) {
 	try {
 		//recuperamos el nif y validamos que llegue informado
+		$nifBaja = $_POST['nifBaja'] ^ CLAVE;
 		if (!$nifBaja = filter_input(INPUT_POST, 'nifBaja')) {
-			throw new Exception('Error al validar nif baja', 4);
+			throw new Exception('Error al validar el nif.', 4);
 		}
 		//validar que el nif exista en la base de datos. Si no existe lanza una excepcion, si existe la borra del array
 		$existe = array_key_exists($nifBaja, $arrayPersonas);
 		if (!$existe) {
-			throw new Exception('Nif no existe', 5);
+			throw new Exception('El Nif introducido no figura en la base de datos.', 5);
 		}
 		//borrar la fila del array 
 		else {
 			unset($arrayPersonas[$nifBaja]);
 			//mostrar mensaje de baja efectuada
-			$mensajes = 'Baja efectuada';
+			$mensajes = 'Baja efectuada correctamente.';
 		}
 	} catch (Exception $e) {
 		$mensajes = $e->getCode() . '. ' . $e->getMessage();
@@ -102,27 +106,30 @@ if (isset($_POST['bajaPersona'])) {
 
 //MODIFICACION DE LA PERSONA SELECCIONADA
 //se detecta el input oculto del formulario que se rellena conjavascript al pulsar modificar 
-try {
-	if (isset($_POST['modificar'])) {
+if (isset($_POST['modificar'])) {
+	global $mensajes;
+	global $arrayPersonas;
+
+	try {
 		//recuperar nif sin espacios en blanco -trim() y validar datos. Si esta en blanco lanza excepcion.
 		if (!$nifModi = trim(filter_input(INPUT_POST, 'nifModi'))) {
-			throw new Exception('El Nif no se ha informado', 6);
+			throw new Exception('El campo Nif no debe estar vacio.', 6);
 		}
 		//validar que el nif exista en la base de datos. Si se ha modificado y no es correcto lanza excepcion
 		$existe = array_key_exists($nifModi, $arrayPersonas);
 		if (!$existe) {
-			throw new Exception("La modificacion de datos para el nif $nifModi no es correcta ya que no existe", 9);
+			throw new Exception("La modificacion del nif no es correcta ya que no figura en la base de datos.", 9);
 		}
 		//recuperar nombre sin espacios en blanco -trim() y validar datos. Si esta en blanco lanza excepcion.
 		if (!$nombreModi = trim(filter_input(INPUT_POST, 'nombreModi'))) {
-			throw new Exception('El nombre modificado no se ha informado', 7);
+			throw new Exception('El campo nombre no debe estar vacio', 7);
 		} else {
 			//guardamos el nuevo nombre en minúsculas con la primera letra en mayúsculas
 			$nombreModi = ucfirst(strtolower($nombreModi));
 		}
 		//recuperar direccion sin espacios en blanco -trim() y validar datos. Si esta en blanco lanza excepcion.
 		if (!$direccionModi = trim(filter_input(INPUT_POST, 'direccionModi'))) {
-			throw new Exception('La direccion modificada no se ha informado', 8);
+			throw new Exception('El campo direccion no debe estar vacio', 8);
 		} else {
 			//guardamos dirección en minúsculas con la primera letra en mayúsculas
 			$direccionModi = ucfirst(strtolower($direccionModi));
@@ -131,22 +138,28 @@ try {
 		$arrayPersonas[$nifModi]['nombre'] = $nombreModi;
 		$arrayPersonas[$nifModi]['direccion'] = $direccionModi;
 		//mensaje de modificación efectuada
-		$mensajes = 'Modificacion efectuada';
+		$mensajes = 'Modificacion efectuada.';
+	} catch (Exception $e) {
+		$mensajes = $e->getCode() . '. ' . $e->getMessage();
 	}
-} catch (Exception $e) {
-	$mensajes = $e->getCode() . '. ' . $e->getMessage();
 }
+
 
 //la creacion de la tabla html la he puesto en una funcion que recorre el array y crea las columnas. Desde el HTML se realiza la llamada
 function crearTablaPersonas($arrayPersonas)
 {
 	//ordenar el array que tenemos de menor a mayor
 	ksort($arrayPersonas);
+
 	//recorrer el array 
 	foreach ($arrayPersonas as $numNif => $valores) {
 		//variables con los valores. Son para simplificar la insercion en los strings de los inputs (demasiadas comillas)
 		$valor1 = $arrayPersonas[$numNif]['nombre'];
 		$valor2 = $arrayPersonas[$numNif]['direccion'];
+
+		//cifrado del numero de nif en la baja
+		//$nifCifrado = $numNif ^ CLAVE;
+
 		//añadir las columnas con el contenido del array personas
 		echo "<tr>
   <td class='nif'>$numNif</td>
